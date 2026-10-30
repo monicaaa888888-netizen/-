@@ -1584,11 +1584,6 @@
     font-size:11px; color:var(--ld-text-3);
   }
   .ld-rt-time{font-variant-numeric:tabular-nums;}
-  .ld-rt-tag{
-    display:inline-flex; align-items:center; gap:3px;
-    background:var(--ld-accent-soft); color:var(--ld-accent);
-    border-radius:4px; padding:1px 6px; font-size:10px; font-weight:500;
-  }
   .ld-rt-text{font-size:13px; line-height:1.65; color:var(--ld-text);}
 
   /* ===== 弹幕（图二）：定位在左侧转写区右下方 ===== */
@@ -6088,7 +6083,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft
 }
 .ld-rt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--ld-text-3); }
 .ld-rt-time { font-variant-numeric: tabular-nums; }
-.ld-rt-tag { display: inline-flex; align-items: center; gap: 3px; background: var(--ld-accent-soft); color: var(--ld-accent); border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 500; }
 .ld-rt-text { font-size: 13px; line-height: 1.65; color: var(--ld-text); }
 .ld-danmaku-host { position: absolute; right: 14px; bottom: 68px; width: 300px; max-width: calc(100% - 28px); pointer-events: none; z-index: 40; display: flex; flex-direction: column; gap: 0px; }
 .ld-danmaku-host[hidden] { display: none !important; }
@@ -10957,7 +10951,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft
 }
 .ld-rt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--ld-text-3); }
 .ld-rt-time { font-variant-numeric: tabular-nums; }
-.ld-rt-tag { display: inline-flex; align-items: center; gap: 3px; background: var(--ld-accent-soft); color: var(--ld-accent); border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 500; }
 .ld-rt-text { font-size: 13px; line-height: 1.65; color: var(--ld-text); }
 .ld-danmaku-host { position: absolute; right: 14px; bottom: 68px; width: 300px; max-width: calc(100% - 28px); pointer-events: none; z-index: 40; display: flex; flex-direction: column; gap: 0px; }
 .ld-danmaku-host[hidden] { display: none !important; }
@@ -14601,7 +14594,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft
 }
 .ld-rt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--ld-text-3); }
 .ld-rt-time { font-variant-numeric: tabular-nums; }
-.ld-rt-tag { display: inline-flex; align-items: center; gap: 3px; background: var(--ld-accent-soft); color: var(--ld-accent); border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 500; }
 .ld-rt-text { font-size: 13px; line-height: 1.65; color: var(--ld-text); }
 .ld-danmaku-host { position: absolute; right: 14px; bottom: 68px; width: 300px; max-width: calc(100% - 28px); pointer-events: none; z-index: 40; display: flex; flex-direction: column; gap: 0px; }
 .ld-danmaku-host[hidden] { display: none !important; }
@@ -26112,6 +26104,9 @@ window.addEventListener('message', function(e){
     document.querySelectorAll('.ld-tab-pane').forEach(function(p){
       p.classList.toggle('active', p.dataset.ldPane === name);
     });
+    // 仅改动：笔记区显示清空，实时小结隐藏
+    var clearBtn = document.querySelector('.ld-tabs-clear');
+    if (clearBtn) clearBtn.hidden = (name === 'realtime') ? true : false;
   }
 
   /* ===== 收藏星标 ===== */
@@ -26893,6 +26888,19 @@ window.addEventListener('message', function(e){
     }
   }
 
+  /* 实时小结时间区间：约 2 分钟提取一条，显示为 起始时间-结束时间 */
+  var LD_RT_WINDOW = 122; // 秒，首条为 00:00-02:02
+  function _ldFmtClock(s){
+    s = Math.max(0, Math.floor(s||0));
+    var m = Math.floor(s/60), ss = s%60;
+    function pad(n){return (n<10?'0':'')+n;}
+    return pad(m)+':'+pad(ss);
+  }
+  function _ldRtRange(idx){
+    var startSec = idx * LD_RT_WINDOW;
+    return _ldFmtClock(startSec) + '-' + _ldFmtClock(startSec + LD_RT_WINDOW);
+  }
+
   /* 实时小结：弹幕新消息汇入此处 */
   function _ldAppendRealtime(text, segId, timeStr){
     var list = document.getElementById('ldRtList');
@@ -26903,8 +26911,7 @@ window.addEventListener('message', function(e){
     item.dataset.segId = segId || '';
     item.innerHTML =
       '<div class="ld-rt-head">' +
-        '<span class="ld-rt-time">' + (timeStr || _ldFmtTime(LD_REC.sec)) + '</span>' +
-        '<span class="ld-rt-tag">AI 小结</span>' +
+        '<span class="ld-rt-time">' + _ldRtRange(LD_RT_ITEMS.length) + '</span>' +
       '</div>' +
       '<div class="ld-rt-text"></div>';
     item.querySelector('.ld-rt-text').textContent = text;
